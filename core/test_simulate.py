@@ -9,7 +9,7 @@ class SimulatePageTests(TestCase):
                               rank="Lieutenant", draft_health=100, health=37)
         response = self.client.get("/simulate")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Fight replay is unavailable")
+        self.assertContains(response, "No fight data imported yet")
         self.assertContains(response, "Lieutenant")
         self.assertContains(response, "&lt;script&gt;Soldier&lt;/script&gt;")
         self.assertEqual(Person.objects.get(pk=0).health, 37)

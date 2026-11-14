@@ -15,7 +15,7 @@ class Person(models.Model):
     rank = models.TextField(null=True, blank=True)
     # Initial draft input is separate from mutable health used by future combat.
     draft_health = models.PositiveIntegerField(null=True, blank=True)
-    health = models.PositiveIntegerField(null=True, blank=True)
+    health = models.BigIntegerField(null=True, blank=True)
     draft_batch = models.ForeignKey(
         "DraftBatch", null=True, blank=True, on_delete=models.PROTECT,
         related_name="people",
@@ -64,3 +64,39 @@ class DraftJob(models.Model):
         constraints = [models.UniqueConstraint(
             fields=["batch", "kind"], name="unique_draft_batch_job",
         )]
+
+
+class FightBatch(models.Model):
+    id = models.PositiveBigIntegerField(primary_key=True)
+    payload = models.JSONField()
+    next_id = models.PositiveBigIntegerField(null=True)
+    navigation_issue = models.TextField(blank=True)
+    next_scheduled = models.BooleanField(default=False)
+
+
+class Fight(models.Model):
+    id = models.PositiveBigIntegerField(primary_key=True)
+    batch = models.ForeignKey(FightBatch, on_delete=models.PROTECT, related_name="fights")
+    blue = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="blue_fights")
+    red = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="red_fights")
+    payload = models.JSONField()
+    status = models.CharField(max_length=16, default="pending")
+    error = models.TextField(blank=True)
+    blue_start_health = models.BigIntegerField(null=True)
+    red_start_health = models.BigIntegerField(null=True)
+    blue_end_health = models.BigIntegerField(null=True)
+    red_end_health = models.BigIntegerField(null=True)
+    completed_at = models.DateTimeField(null=True)
+
+
+class FightEvent(models.Model):
+    fight = models.ForeignKey(Fight, on_delete=models.PROTECT, related_name="events")
+    position = models.PositiveIntegerField()
+    attacker = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="attacks")
+    defender = models.ForeignKey(Person, on_delete=models.PROTECT, related_name="defences")
+    damage = models.PositiveIntegerField()
+    remaining_health = models.BigIntegerField(null=True)
+
+    class Meta:
+        ordering = ["position"]
+        constraints = [models.UniqueConstraint(fields=["fight", "position"], name="unique_fight_event_position")]

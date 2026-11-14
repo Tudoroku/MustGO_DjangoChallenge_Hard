@@ -10,6 +10,8 @@ from core import drafting
 from core.models import DraftBatch, DraftJob
 from core.task_base import RetryingNetworkTask
 from core.task_base import TransientNetworkError
+from core import fighting
+from core.models import Fight, FightBatch
 
 
 @shared_task(bind=True, base=RetryingNetworkTask)
@@ -95,3 +97,43 @@ def execute_draft_job(self, job_id):
             if code & 255 in (5, 6):  # SQLITE_BUSY / SQLITE_LOCKED
                 raise TransientNetworkError("SQLite writer contention") from exc
         raise
+
+
+class FightTask(RetryingNetworkTask):
+    abstract = True
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        Fight.objects.filter(pk=args[0]).exclude(status="completed").update(status="failed", error=str(exc))
+        super().on_failure(exc, task_id, args, kwargs, einfo)
+
+
+@shared_task(bind=True, base=FightTask)
+def simulate_fight(self, fight_id):
+    started = time.time()
+    try:
+        applied = fighting.replay_fight(fight_id)
+    except OperationalError as exc:
+        if getattr(exc.__cause__, "sqlite_errorcode", 0) & 255 in (5, 6):
+            raise TransientNetworkError("SQLite fight writer contention") from exc
+        raise
+    return {"fight_id": fight_id, "applied": applied, "pid": os.getpid(),
+            "started_at": started, "finished_at": time.time()}
+
+
+@shared_task(bind=True, base=RetryingNetworkTask)
+def fetch_fight_batch(self, batch_id=0):
+    drafting.validate_batch_id(batch_id)
+    existing = FightBatch.objects.filter(pk=batch_id).first()
+    payload = existing.payload if existing else drafting.fetch_json(f"/fight/{batch_id}")
+    saved = fighting.save_fight_batch(batch_id, payload)
+    # Each fight is scheduled immediately; never wait for subsequent batches.
+    fighting.schedule_fights(saved.pk)
+    if saved.next_id is not None and not saved.navigation_issue:
+        claimed = FightBatch.objects.filter(pk=saved.pk, next_scheduled=False).update(next_scheduled=True)
+        if claimed:
+            try:
+                fetch_fight_batch.apply_async(args=[saved.next_id], retry=False)
+            except Exception:
+                FightBatch.objects.filter(pk=saved.pk).update(next_scheduled=False)
+                raise
+    return {"batch_id": saved.pk, "next_id": saved.next_id, "issue": saved.navigation_issue}
