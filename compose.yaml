@@ -1,0 +1,40 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    init: true
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    command:
+      - celery
+      - -A
+      - backend
+      - worker
+      - --loglevel=INFO
+      - --pool=prefork
+      - --concurrency=${CELERY_WORKER_CONCURRENCY:-2}
+    depends_on:
+      redis:
+        condition: service_healthy
+    stop_grace_period: 30s
+
+volumes:
+  redis-data:

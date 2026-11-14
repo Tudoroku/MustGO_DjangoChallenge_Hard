@@ -68,4 +68,19 @@ the optional key, repeat imports and updates, response validation, network and
 HTTP errors, separate timeouts, bounded retries and exponential backoff, local
 file imports, invalid JSON, and transaction rollback.
 
-Soldiers, fights, Celery, and Redis are outside Phase 1.
+## Phase 2 investigation
+
+See [the Phase 2 architecture and API findings](docs/phase2.md) for confirmed
+contracts, the proposed relational design, import/integrity requirements, health
+semantics, and the Phase 3 plan. The existing Person model, migration, and import
+command are unchanged. Soldier/fight schemas and data sources have not been
+provided by the discoverable contracts, so their models and importers are
+deferred. Phase 2 introduced no simulation, Celery, or Redis.
+
+## Phase 2.5: Celery infrastructure
+
+See [the Celery setup and verification guide](docs/phase2.5.md) for the Linux
+prefork worker, Redis, exact PowerShell startup commands, real background smoke
+check, retry policy, future batch idempotency requirements, and database limits.
+SQLite and the existing Person import remain unchanged. Drafting, ranks, and
+fight simulation are deferred until their contracts are confirmed.
