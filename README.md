@@ -82,5 +82,40 @@ deferred. Phase 2 introduced no simulation, Celery, or Redis.
 See [the Celery setup and verification guide](docs/phase2.5.md) for the Linux
 prefork worker, Redis, exact PowerShell startup commands, real background smoke
 check, retry policy, future batch idempotency requirements, and database limits.
-SQLite and the existing Person import remain unchanged. Drafting, ranks, and
-fight simulation are deferred until their contracts are confirmed.
+The existing Person import remains unchanged. Phase 3 extends drafting using
+this infrastructure; the Phase 2.5 guide records the earlier setup.
+
+## Phase 3: concurrent soldier drafting
+
+See [the Phase 3 implementation and verification guide](docs/phase3.md) for
+numbered batch discovery, immediate background persistence, retries, shared
+SQLite storage, saved-file imports, recovery and exact PowerShell commands.
+The confirmed first batch has ten records and points to batch 1. No final batch
+or termination signal is assumed. `draft --status` therefore reports
+`complete: false`, even after all currently scheduled work succeeds.
+
+```powershell
+.\.venv\Scripts\python.exe manage.py migrate
+docker compose up -d --build worker
+.\.venv\Scripts\python.exe manage.py draft
+.\.venv\Scripts\python.exe manage.py draft --status
+```
+
+`Person.rank`, `health`, `draft_health` and drafting provenance are nullable for
+existing people. Drafting records initial health separately and initializes
+mutable health only when it is null. It preserves omitted keys, rejects
+conflicting batch replacements and overlapping people across different batches,
+and never deletes absent people. Updated Hellstorm route keys trigger one
+same-origin background instruction download. Fight simulation remains deferred.
+
+`/simulate` (also `/simulate/`) serves an HTML status page with the drafted
+soldiers and saved initial/current health. It explicitly reports that fight
+replay is unavailable; no fight events or results are fabricated. Start Django
+with `.\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8000` and open
+http://127.0.0.1:8000/simulate.
+
+For a broker-free saved-file import (does not follow pointers or fetch keys):
+
+```powershell
+.\.venv\Scripts\python.exe manage.py import_draft --file core/fixtures/draft-0.json --batch-id 0 --sync
+```

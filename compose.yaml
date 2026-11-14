@@ -19,7 +19,9 @@ services:
     init: true
     working_dir: /app
     volumes:
-      - .:/app:ro
+      # Directory mount includes SQLite journals and locks. This is the SAME
+      # db.sqlite3 used by native Windows Django, not an image-local database.
+      - .:/app
     environment:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1

@@ -1,5 +1,9 @@
 # Phase 2.5: Celery infrastructure
 
+Historical phase report. [Phase 3](phase3.md) now implements drafting, adds a
+writable shared database mount, and verifies real Redis/Linux worker execution.
+The read-only mount and unavailable-Docker notes below describe Phase 2.5 only.
+
 This phase adds only background processing infrastructure. The newly supplied
 `GET /draft-info` requirements establish that each downloaded drafting batch
 will eventually be a separate task, may start immediately after download, and

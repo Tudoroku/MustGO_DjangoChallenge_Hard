@@ -8,5 +8,9 @@ __pycache__
 .env.*
 !.env.example
 db.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+test-draft.sqlite3
 people.json
 api_evidence

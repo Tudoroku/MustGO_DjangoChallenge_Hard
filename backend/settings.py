@@ -99,8 +99,19 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        # Take the SQLite writer reservation before reading a write transaction.
+        # select_for_update() alone does not lock rows on SQLite.
+        'OPTIONS': {'timeout': 20, 'transaction_mode': 'IMMEDIATE'},
+        'TEST': {'NAME': str(BASE_DIR / 'test-draft.sqlite3')},
     }
 }
+
+DRAFT_API_BASE_URL = os.environ.get(
+    'DRAFT_API_BASE_URL',
+    'https://coderun2026-csbwf4haa4d0gubu.westus3-01.azurewebsites.net',
+)
+DRAFT_CONNECT_TIMEOUT = 10
+DRAFT_READ_TIMEOUT = 120
 
 
 # Password validation

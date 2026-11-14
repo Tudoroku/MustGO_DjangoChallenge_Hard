@@ -87,7 +87,7 @@ class CeleryRetryTests(SimpleTestCase):
         self.addCleanup(self.app.close)
 
     def task_for(self, operation, name="probe"):
-        @self.app.task(base=RetryingNetworkTask, name=name)
+        @self.app.task(base=RetryingNetworkTask, name=name, shared=False)
         def probe():
             return operation()
         return probe
