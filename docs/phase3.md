@@ -1,5 +1,8 @@
 # Phase 3: concurrent soldier drafting
 
+Historical phase report. [Phase 4](phase4.md) now imports/replays actual fights
+and extends `/simulate` from a status page to saved fight results.
+
 The existing Django project, Celery app, Redis services, Linux prefork worker
 and `RetryingNetworkTask` are reused. There is no PostgreSQL migration, fight
 simulation, commit or push.

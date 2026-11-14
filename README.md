@@ -1,5 +1,9 @@
 # CodeRun 2026 — Django War Simulator HARD
 
+Phase 4 is runnable: [fight import, parallel replay, health semantics and commands](docs/phase4.md).
+`/simulate` now shows actual fight results and ordered attack histories. The
+phase reports below describe their respective implementation stages.
+
 Phase 1 uses the existing `backend` project and `core` app to register people.
 
 ## Setup and import
